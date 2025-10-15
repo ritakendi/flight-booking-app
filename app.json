@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Flight Booking App",
+    "slug": "flight-booking-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.flightbooking.app"
+    },
+    "android": {
+      "package": "com.flightbooking.app"
+    },
+    "web": {
+    },
+    "plugins": [
+      "expo-font"
+    ]
+  }
+}
