@@ -46,22 +46,38 @@ export default function SignUpScreen({ navigation, onSignUpSuccess }) {
     setLoading(false);
 
     if (result.success) {
-      Alert.alert(
-        'Success',
-        'Account created successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: async () => {
-              if (onSignUpSuccess) {
-                await onSignUpSuccess();
-              }
+      // On web, Alert.alert doesn't work properly, so we handle it differently
+      if (Platform.OS === 'web') {
+        // Show success message
+        if (typeof window !== 'undefined' && window.alert) {
+          window.alert('Account created successfully!');
+        }
+        if (onSignUpSuccess) {
+          await onSignUpSuccess();
+        }
+      } else {
+        // Mobile: use Alert.alert with callback
+        Alert.alert(
+          'Success',
+          'Account created successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: async () => {
+                if (onSignUpSuccess) {
+                  await onSignUpSuccess();
+                }
+              },
             },
-          },
-        ]
-      );
+          ]
+        );
+      }
     } else {
-      Alert.alert('Sign Up Failed', result.error);
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+        window.alert('Sign Up Failed: ' + result.error);
+      } else {
+        Alert.alert('Sign Up Failed', result.error);
+      }
     }
   };
 

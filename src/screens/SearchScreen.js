@@ -22,6 +22,15 @@ export default function SearchScreen({ navigation, onLogoutSuccess }) {
   const [adults, setAdults] = useState('1');
   const [loading, setLoading] = useState(false);
 
+  // Helper function to show alerts that works on both web and mobile
+  const showAlert = (title, message) => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+      window.alert(message || title);
+    } else {
+      Alert.alert(title, message);
+    }
+  };
+
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(Platform.OS === 'ios'); // Keep open on iOS
     if (selectedDate) {
@@ -39,47 +48,60 @@ export default function SearchScreen({ navigation, onLogoutSuccess }) {
   };
 
   const handleLogout = async () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            await authService.logout();
-            if (onLogoutSuccess) {
-              await onLogoutSuccess();
-            }
+    // For web compatibility, use window.confirm if available
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.confirm) {
+      const confirmed = window.confirm('Are you sure you want to logout?');
+      
+      if (confirmed) {
+        await authService.logout();
+        if (onLogoutSuccess) {
+          await onLogoutSuccess();
+        }
+      }
+    } else {
+      // Mobile: use Alert.alert
+      Alert.alert(
+        'Logout',
+        'Are you sure you want to logout?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Logout',
+            style: 'destructive',
+            onPress: async () => {
+              await authService.logout();
+              if (onLogoutSuccess) {
+                await onLogoutSuccess();
+              }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   const handleSearch = async () => {
     // Validation
     if (!origin || !destination || !departureDate) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      showAlert('Error', 'Please fill in all required fields');
       return;
     }
 
     if (origin.trim().length < 2 || destination.trim().length < 2) {
-      Alert.alert('Error', 'Please enter valid airport codes or city names');
+      showAlert('Error', 'Please enter valid airport codes or city names');
       return;
     }
 
     // Validate date format (YYYY-MM-DD)
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(departureDate)) {
-      Alert.alert('Error', 'Please enter date in YYYY-MM-DD format');
+      showAlert('Error', 'Please enter date in YYYY-MM-DD format');
       return;
     }
 
     const adultsNum = parseInt(adults);
     if (isNaN(adultsNum) || adultsNum < 1 || adultsNum > 9) {
-      Alert.alert('Error', 'Number of adults must be between 1 and 9');
+      showAlert('Error', 'Number of adults must be between 1 and 9');
       return;
     }
 
@@ -103,9 +125,9 @@ export default function SearchScreen({ navigation, onLogoutSuccess }) {
         },
       });
     } else if (result.success && (!result.data || result.data.length === 0)) {
-      Alert.alert('No Flights Found', 'No flights available for this route. Try different dates or destinations.');
+      showAlert('No Flights Found', 'No flights available for this route. Try different dates or destinations.');
     } else {
-      Alert.alert('Search Failed', result.error);
+      showAlert('Search Failed', result.error);
     }
   };
 
@@ -145,24 +167,48 @@ export default function SearchScreen({ navigation, onLogoutSuccess }) {
 
         <View style={styles.inputGroup}>
           <Text style={styles.label}>Departure Date *</Text>
-          <TouchableOpacity 
-            style={styles.dateButton}
-            onPress={showDatepicker}
-          >
-            <Text style={styles.dateButtonText}>
-              {departureDate || 'Select Date 📅'}
-            </Text>
-          </TouchableOpacity>
-          {showDatePicker && (
-            <DateTimePicker
-              value={date}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={handleDateChange}
-              minimumDate={new Date()}
+          {Platform.OS === 'web' ? (
+            <input
+              type="date"
+              value={departureDate}
+              onChange={(e) => setDepartureDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              style={{
+                padding: 12,
+                fontSize: 16,
+                borderWidth: 1,
+                borderColor: '#ddd',
+                borderRadius: 8,
+                backgroundColor: '#f9f9f9',
+                borderStyle: 'solid',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}
             />
+          ) : (
+            <>
+              <TouchableOpacity 
+                style={styles.dateButton}
+                onPress={showDatepicker}
+              >
+                <Text style={styles.dateButtonText}>
+                  {departureDate || 'Select Date 📅'}
+                </Text>
+              </TouchableOpacity>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={date}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handleDateChange}
+                  minimumDate={new Date()}
+                />
+              )}
+            </>
           )}
-          <Text style={styles.hint}>Tap to select a date from calendar</Text>
+          <Text style={styles.hint}>
+            {Platform.OS === 'web' ? 'Select a date' : 'Tap to select a date from calendar'}
+          </Text>
         </View>
 
         <View style={styles.inputGroup}>
@@ -222,7 +268,12 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   logoutButton: {
-    padding: 8,
+    padding: 12,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#d32f2f',
+    cursor: 'pointer',
   },
   logoutText: {
     color: '#d32f2f',

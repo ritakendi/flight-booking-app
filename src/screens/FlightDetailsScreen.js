@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,22 +6,43 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 
 export default function FlightDetailsScreen({ route, navigation }) {
   const { flight } = route.params;
+  const [booking, setBooking] = useState(false);
 
   const handleBookFlight = () => {
-    Alert.alert(
-      'Booking Confirmed',
-      `Your flight with ${flight.airline} has been booked!\n\nFlight: ${flight.flightNumber}\nFrom: ${flight.origin}\nTo: ${flight.destination}\nDate: ${flight.date}\nPrice: $${flight.price}`,
-      [
-        {
-          text: 'Back to Search',
-          onPress: () => navigation.navigate('Search'),
-        },
-      ]
-    );
+    setBooking(true);
+    
+    const bookingMessage = `Your flight with ${flight.airline} has been booked!\n\nFlight: ${flight.flightNumber}\nFrom: ${flight.origin}\nTo: ${flight.destination}\nDate: ${flight.date}\nPrice: $${flight.price}`;
+    
+    // Simulate booking process
+    setTimeout(() => {
+      if (Platform.OS === 'web') {
+        // Web: use window.alert and navigate immediately
+        if (typeof window !== 'undefined' && window.alert) {
+          window.alert('🎉 Booking Confirmed!\n\n' + bookingMessage);
+        }
+        // Navigate back to search screen
+        setBooking(false);
+        navigation.navigate('Search');
+      } else {
+        // Mobile: use Alert.alert with callback
+        setBooking(false);
+        Alert.alert(
+          'Booking Confirmed',
+          bookingMessage,
+          [
+            {
+              text: 'Back to Search',
+              onPress: () => navigation.navigate('Search'),
+            },
+          ]
+        );
+      }
+    }, 500);
   };
 
   return (
@@ -124,11 +145,12 @@ export default function FlightDetailsScreen({ route, navigation }) {
       </View>
 
       <TouchableOpacity
-        style={styles.bookButton}
+        style={[styles.bookButton, booking && styles.bookButtonDisabled]}
         onPress={handleBookFlight}
+        disabled={booking}
       >
         <Text style={styles.bookButtonText}>
-          Book for ${flight.price}
+          {booking ? 'Booking... ✈️' : `Book for $${flight.price}`}
         </Text>
       </TouchableOpacity>
 
@@ -263,6 +285,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 5,
+  },
+  bookButtonDisabled: {
+    backgroundColor: '#999',
+    opacity: 0.7,
   },
   bookButtonText: {
     color: '#fff',

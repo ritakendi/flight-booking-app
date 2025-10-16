@@ -37,7 +37,11 @@ export default function LoginScreen({ navigation, onLoginSuccess }) {
         await onLoginSuccess();
       }
     } else {
-      Alert.alert('Login Failed', result.error);
+      if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
+        window.alert('Login Failed: ' + result.error);
+      } else {
+        Alert.alert('Login Failed', result.error);
+      }
     }
   };
 
